@@ -6,10 +6,9 @@
 </head>
 <body>
 
-<canvas id='example'>Обновите браузер</canvas>
+    <canvas id='example'>Обновите браузер</canvas>
 
-
-<script>
+    <script>
     var example = document.getElementById("example"),
             decorationsCtx     = example.getContext('2d'),
             axisCtx     = example.getContext('2d'),
@@ -17,10 +16,39 @@
             ctx     = example.getContext('2d');
 
 
-    var data = [0,2,3,3,4,4,5,6,7,10,11,14,18,27,40,39,38,37,36, 5, 8, 10];
+    var data = [
+        [0,43],
+        [2,43],
+        [3,23],
+        [3,65],
+        [4,45],
+        [4,34],
+        [5,87],
+        [6,24],
+        [7,86],
+        [10,57],
+        [11,78],
+        [14,87],
+        [18,67],
+        [21,97],
+        [39,67],
+        [38,98],
+        [37,67],
+        [36,78],
+        [5,9],
+        [8,4],
+        [10,1]
+    ];
 
-    var MAX = Math.max.apply(null, data),
-        MIN = Math.min.apply(null, data);
+    // sort initial data
+    data = sortData(data);
+
+
+    var MAX_ARGUMENT = getMax(data, 0),
+        MIN_ARGUMENT = getMin(data, 0);
+
+    var MAX_VALUE = getMax(data, 1),
+        MIN_VALUE = getMin(data, 1);
 
     var PADDING = 30;
 
@@ -42,13 +70,13 @@
     var LENGTH = data.length;
     var STEPX = DATA_WIDTH / LENGTH;
 
+    // draw border
     function drawStroke() {
-        // draw border
         decorationsCtx.strokeStyle = "#ccc";
         decorationsCtx.strokeRect(0, 0, example.width, example.height);
-
     }
 
+    // draw X, Y axis
     function drawAxis() {
         var x = example.width - PADDING;
         var y = PADDING;
@@ -59,25 +87,6 @@
 
         axisCtx.strokeStyle = "#777";
         axisCtx.stroke();
-
-        axisCtx.textBaseline = "top";
-        axisCtx.textAlign = "right";
-
-        for (var i = 1; i < LENGTH; i++) {
-            x = getCoordinatesByValue(i, data[i]).x;
-            drawVerticalRuller(x);
-
-            axisCtx.fillText(i, x, Y0 + 5, STEPX)
-        }
-
-        var step = (MAX - MIN) / LENGTH;
-        for (var i = MIN; i < MAX; i += step) {
-            y = getCoordinatesByValue(i, i).y;
-            i = Math.round(i);
-
-            drawHorizontalRuller(y);
-            axisCtx.fillText(i, X0 - 5, y);
-        }
     }
 
     function initCanvas() {
@@ -89,7 +98,7 @@
         ctx.beginPath();
 
         for (var i = 0; i < LENGTH; i++) {
-            var coordinate = getCoordinatesByValue(i, data[i]);
+            var coordinate = getCoordinatesByValue(data[i][0], data[i][1]);
             x = coordinate.x;
             y = coordinate.y;
 
@@ -105,8 +114,8 @@
     }
 
     function getCoordinatesByValue(x, fx) {
-        var x = X0 + x * STEPX;
-        var y = Y0 - fx * DATA_HEIGHT / MAX;
+        var x = X0 + x * DATA_WIDTH / MAX_ARGUMENT;
+        var y = Y0 - fx * DATA_HEIGHT / MAX_VALUE;
 
         return {
             "x": x,
@@ -139,20 +148,78 @@
     }
 
     function getMin(array, index) {
-        return result = array.reduce(function(max, arr) {
+        return result = array.reduce(function(min, arr) {
             return min <= arr[index] ? min : arr[index];
-        }, -Infinity);
+        }, Infinity);
     }
 
-    initCanvas();
-    drawStroke();
-    drawAxis();
-    drawData();
+    function sortData(array) {
+        return array.sort(function(a, b) {
+            return (a[0] < b[0] ? -1 : (a[0] > b[0] ? 1 : 0)); }
+        );
+    }
 
+    function drawLegend(minx, maxx, miny, maxy) {
+        var lengthx = maxx - minx;
+        var lengthy = maxy - miny;
+
+        axisCtx.textBaseline = "top";
+        axisCtx.textAlign = "right";
+
+//        var M = 4500;
+
+//        var yMeasure = Math.log(M) / Math.LN10;
+//        var roundedLog = Math.round(yMeasure - 0.19);
+//        var newStep = Math.pow(10, roundedLog - 1);
+
+        var step = (maxx - minx) / LENGTH;
+        for (var i = minx; i < maxx; i += step) {
+            x = getCoordinatesByValue(i, i).x;
+//            i = Math.round(i);
+
+            drawVerticalRuller(x);
+            axisCtx.fillText(i.toFixed(1), x, Y0 + 5)
+        }
+
+        step = (maxy - miny) / LENGTH;
+        for (var i = miny; i < maxy; i += step) {
+            y = getCoordinatesByValue(i, i).y;
+//            i = Math.floor(i);
+
+            drawHorizontalRuller(y);
+            axisCtx.fillText(i.toFixed(1), X0 - 5, y);
+        }
+    }
+
+    function clearContext(ctx) {
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
+
+    function drawAll() {
+        initCanvas();
+        drawStroke();
+        drawAxis();
+        drawLegend(MIN_ARGUMENT, MAX_ARGUMENT, MIN_VALUE, MAX_VALUE);
+        drawData();
+    }
+
+    drawAll();
+
+    /*
+        window.addEventListener("load", function(){
+            console.log("ready");
+            document.getElementById("slider").addEventListener("change", function(){
+                clearContext(ctx);
+                var v = this.value;
+                drawAll(v);
+                console.log(this.value)
+            });
+        });
+    */
 
 </script>
 
-<script src='http://172.18.67.45:3000/socket.io/socket.io.js'></script>
-<script src='http://172.18.67.45:3001/browser-sync-client.min.js'></script>
+<script src='http://localhost:3000/socket.io/socket.io.js'></script>
+<script src='http://localhost:3001/browser-sync-client.min.js'></script>
 </body>
 </html>
