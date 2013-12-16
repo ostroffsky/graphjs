@@ -45,6 +45,8 @@ var MAX_ARGUMENT = getMax(data, 0),
 var MAX_VALUE = getMax(data, 1),
         MIN_VALUE = getMin(data, 1);
 
+var VALUE_LEGEND_BOUNDS = getMeasures(MAX_VALUE, MIN_VALUE);
+
 var PADDING = 30;
 
 var CANVAS_HEIGHT = 480,
@@ -106,7 +108,7 @@ function drawData() {
 
 function getCoordinatesByValue(x, fx) {
     var x = X0 + x * DATA_WIDTH / MAX_ARGUMENT;
-    var y = Y0 - fx * DATA_HEIGHT / MAX_VALUE;
+    var y = Y0 - fx * DATA_HEIGHT / VALUE_LEGEND_BOUNDS.max;
 
     return {
         "x": x,
@@ -151,32 +153,37 @@ function sortData(array) {
     );
 }
 
+function getMeasures(max, min) {
+    var step = Math.round(Math.pow(10, (Math.log(max - min) / Math.LN10) - 1));
+    var N = Math.ceil((max - min) / step);
+
+    return {
+        step: step,
+        N: N,
+        max: min + step * N,
+        min: min
+    };
+}
+
+
 function drawLegend(minx, maxx, miny, maxy) {
-    var lengthx = maxx - minx;
-    var lengthy = maxy - miny;
 
     axisCtx.textBaseline = "top";
     axisCtx.textAlign = "right";
 
-//        var M = 4500;
-
-//        var yMeasure = Math.log(M) / Math.LN10;
-//        var roundedLog = Math.round(yMeasure - 0.19);
-//        var newStep = Math.pow(10, roundedLog - 1);
+    maxy = getMeasures(maxy, miny).max;
 
     var step = (maxx - minx) / LENGTH;
     for (var i = minx; i < maxx; i += step) {
         x = getCoordinatesByValue(i, i).x;
-//            i = Math.round(i);
-
         drawVerticalRuller(x);
         axisCtx.fillText(i.toFixed(1), x, Y0 + 5)
     }
 
+    axisCtx.textBaseline = "middle";
     step = (maxy - miny) / LENGTH;
     for (var i = miny; i < maxy; i += step) {
         y = getCoordinatesByValue(i, i).y;
-//            i = Math.floor(i);
 
         drawHorizontalRuller(y);
         axisCtx.fillText(i.toFixed(1), X0 - 5, y);
@@ -196,15 +203,3 @@ function drawAll() {
 }
 
 drawAll();
-
-/*
- window.addEventListener("load", function(){
- console.log("ready");
- document.getElementById("slider").addEventListener("change", function(){
- clearContext(ctx);
- var v = this.value;
- drawAll(v);
- console.log(this.value)
- });
- });
- */
